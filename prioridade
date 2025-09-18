@@ -1,0 +1,256 @@
+# PRIORIDADES - OPEN WEBUI DOCKER SETUP
+
+## 1. ESPECIFICAÇÕES DOCKER ORIGINAL
+Comando Docker original:
+```bash
+docker run -d -p 3000:8080 --add-host=host.docker.internal:host-gateway -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:main
+```
+
+## 2. DOCKER COMPOSE PARA DESENVOLVIMENTO
+
+```yaml
+# docker-compose.dev.yml
+version: '3.8'
+
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui-dev
+    ports:
+      - "3000:8080"
+    volumes:
+      - open-webui-data:/app/backend/data
+      - ./custom-logo:/app/backend/static/logo  # Para logo da empresa
+    environment:
+      - ENV=development
+      - WEBUI_NAME=Open WebUI Dev
+      - WEBUI_URL=http://localhost:3000
+      # Configuração LiteLLM
+      - ENABLE_LITELLM=true
+      - LITELLM_PROXY_BASE_URL=http://litellm:4000
+      - LITELLM_PROXY_API_KEY=your-api-key-here
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    depends_on:
+      - litellm
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm-dev
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./litellm-config.yaml:/app/config.yaml
+    environment:
+      - LITELLM_MASTER_KEY=your-master-key-here
+    command: ["--config", "/app/config.yaml", "--port", "4000", "--num_workers", "8"]
+    restart: unless-stopped
+
+volumes:
+  open-webui-data:
+    driver: local
+
+networks:
+  default:
+    name: open-webui-dev-network
+```
+
+## 3. DOCKER COMPOSE PARA PRODUÇÃO
+
+```yaml
+# docker-compose.prod.yml
+version: '3.8'
+
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui-prod
+    ports:
+      - "80:8080"
+      - "443:8080"  # Para HTTPS
+    volumes:
+      - open-webui-data:/app/backend/data
+      - ./custom-logo:/app/backend/static/logo  # Para logo da empresa
+      - ./ssl-certs:/app/ssl  # Certificados SSL
+    environment:
+      - ENV=production
+      - WEBUI_NAME=Open WebUI
+      - WEBUI_URL=https://your-domain.com
+      # Configuração LiteLLM
+      - ENABLE_LITELLM=true
+      - LITELLM_PROXY_BASE_URL=http://litellm:4000
+      - LITELLM_PROXY_API_KEY=${LITELLM_API_KEY}
+      # Configurações de segurança
+      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
+      - ENABLE_SIGNUP=false
+      - DEFAULT_USER_ROLE=pending
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
+    depends_on:
+      - litellm
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm-prod
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./litellm-config.yaml:/app/config.yaml
+      - ./litellm-logs:/app/logs
+    environment:
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+    command: ["--config", "/app/config.yaml", "--port", "4000", "--num_workers", "16"]
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis-prod
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl-certs:/etc/nginx/ssl
+    depends_on:
+      - open-webui
+    restart: always
+
+volumes:
+  open-webui-data:
+    driver: local
+  redis-data:
+    driver: local
+
+networks:
+  default:
+    name: open-webui-prod-network
+```
+
+## 4. CONFIGURAÇÃO LITELLM (litellm-config.yaml)
+
+```yaml
+model_list:
+  - model_name: gpt-4
+    litellm_params:
+      model: openai/gpt-4
+      api_key: ${OPENAI_API_KEY}
+  
+  - model_name: gpt-3.5-turbo
+    litellm_params:
+      model: openai/gpt-3.5-turbo
+      api_key: ${OPENAI_API_KEY}
+  
+  - model_name: claude-3
+    litellm_params:
+      model: anthropic/claude-3-sonnet-20240229
+      api_key: ${ANTHROPIC_API_KEY}
+
+general_settings:
+  master_key: ${LITELLM_MASTER_KEY}
+  database_url: ${DATABASE_URL}
+  
+litellm_settings:
+  success_callback: ["langfuse"]
+  failure_callback: ["langfuse"]
+  cache: true
+  cache_params:
+    type: "redis"
+    host: "redis"
+    port: 6379
+    password: ${REDIS_PASSWORD}
+```
+
+## 5. CONFIGURAÇÃO LOGO DA EMPRESA
+
+### Estrutura de pastas:
+```
+custom-logo/
+├── favicon.ico
+├── logo.png
+├── logo-dark.png
+└── logo-light.png
+```
+
+### Variáveis de ambiente para logo:
+```env
+WEBUI_FAVICON_URL=/logo/favicon.ico
+WEBUI_LOGO_URL=/logo/logo.png
+WEBUI_LOGO_DARK_URL=/logo/logo-dark.png
+WEBUI_LOGO_LIGHT_URL=/logo/logo-light.png
+```
+
+## 6. COMANDOS PARA EXECUÇÃO
+
+### Desenvolvimento:
+```bash
+docker-compose -f docker-compose.dev.yml up -d
+```
+
+### Produção:
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+## 7. VARIÁVEIS DE AMBIENTE (.env)
+
+```env
+# Chaves de API
+OPENAI_API_KEY=your-openai-key
+ANTHROPIC_API_KEY=your-anthropic-key
+LITELLM_API_KEY=your-litellm-api-key
+LITELLM_MASTER_KEY=your-litellm-master-key
+
+# Configurações de segurança
+WEBUI_SECRET_KEY=your-secret-key-here
+REDIS_PASSWORD=your-redis-password
+
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/litellm
+
+# Domínio (produção)
+DOMAIN=your-domain.com
+```
+
+## 8. PRIORIDADES DE IMPLEMENTAÇÃO
+
+1. ✅ Configurar Docker Compose básico
+2. ✅ Integrar LiteLLM para múltiplos modelos
+3. ✅ Configurar logo da empresa
+4. ✅ Separar ambientes dev/prod
+5. ⏳ Configurar SSL/HTTPS (produção)
+6. ⏳ Implementar monitoramento
+7. ⏳ Configurar backup automático
+8. ⏳ Implementar CI/CD
+
+## 9. NOTAS IMPORTANTES
+
+- O volume `open-webui-data` persiste os dados entre reinicializações
+- LiteLLM permite usar múltiplos provedores de LLM (OpenAI, Anthropic, etc.)
+- Redis é usado para cache e sessões em produção
+- Nginx atua como proxy reverso em produção
+- Configurações de segurança são essenciais em produção
+- Logo da empresa deve ser colocada na pasta `custom-logo/`
