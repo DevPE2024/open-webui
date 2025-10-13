@@ -7,7 +7,15 @@ from open_webui.models.users import UserModel, Users
 from open_webui.env import SRC_LOG_LEVELS
 from pydantic import BaseModel
 from sqlalchemy import Boolean, Column, String, Text
-from open_webui.utils.auth import verify_password
+from open_webui.utils.auth import verify_password, get_password_hash
+
+# Importar autenticação do Prodify
+try:
+    from open_webui.utils.prodify_auth import ProdifyAuth
+    PRODIFY_AUTH_ENABLED = True
+except ImportError:
+    PRODIFY_AUTH_ENABLED = False
+    ProdifyAuth = None
 
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["MODELS"])
@@ -125,6 +133,51 @@ class AuthsTable:
     def authenticate_user(self, email: str, password: str) -> Optional[UserModel]:
         log.info(f"authenticate_user: {email}")
 
+        # 🔗 INTEGRAÇÃO PRODIFY: Tentar autenticar primeiro no Prodify
+        if PRODIFY_AUTH_ENABLED and ProdifyAuth:
+            try:
+                prodify_user = ProdifyAuth.authenticate_prodify_user(email, password)
+                
+                if prodify_user:
+                    log.info(f"✅ Usuário autenticado no Prodify: {email}")
+                    
+                    # Verificar se usuário já existe no OpenUIX
+                    existing_user = Users.get_user_by_email(prodify_user["email"])
+                    
+                    if existing_user:
+                        # Atualizar dados do usuário local com dados do Prodify
+                        log.info(f"Sincronizando usuário existente: {email}")
+                        return existing_user
+                    else:
+                        # Criar novo usuário no OpenUIX baseado no Prodify
+                        log.info(f"Criando novo usuário do Prodify no OpenUIX: {email}")
+                        
+                        full_name = prodify_user.get("name", "")
+                        if prodify_user.get("surname"):
+                            full_name = f"{full_name} {prodify_user['surname']}".strip()
+                        
+                        profile_image = prodify_user.get("image") or "/user.png"
+                        
+                        # Criar usuário no OpenUIX (primeiro usuário do Prodify vira admin)
+                        has_users = Users.has_users()
+                        role = "admin" if not has_users else "user"
+                        
+                        new_user = self.insert_new_auth(
+                            email=prodify_user["email"],
+                            password=get_password_hash(password),
+                            name=full_name or prodify_user.get("username", "User"),
+                            profile_image_url=profile_image,
+                            role=role
+                        )
+                        
+                        if new_user:
+                            log.info(f"✅ Usuário do Prodify criado no OpenUIX: {email}")
+                            return new_user
+            except Exception as e:
+                log.error(f"❌ Erro na autenticação Prodify: {e}")
+                # Se falhar, continua para autenticação local
+
+        # 🔐 Autenticação Local (fallback)
         user = Users.get_user_by_email(email)
         if not user:
             return None

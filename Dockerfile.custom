@@ -1,0 +1,39 @@
+# Stage 1: Build do Frontend
+FROM node:18-alpine AS frontend-builder
+
+WORKDIR /app
+
+# Copiar package files
+COPY package.json package-lock.json ./
+
+# Instalar dependências
+RUN npm ci --legacy-peer-deps
+
+# Copiar código fonte
+COPY . .
+
+# Build do frontend
+RUN npm run build
+
+# Stage 2: Imagem Final
+FROM ghcr.io/open-webui/open-webui:main
+
+# Remover build antigo
+RUN rm -rf /app/build
+
+# Copiar build customizado
+COPY --from=frontend-builder /app/build /app/build
+
+# Copiar favicons customizados
+COPY --from=frontend-builder /app/static/favicon* /app/backend/static/
+
+# Copiar manifests customizados
+COPY --from=frontend-builder /app/static/static/site.webmanifest /app/backend/static/site.webmanifest
+COPY --from=frontend-builder /app/static/opensearch.xml /app/backend/static/opensearch.xml
+
+# Expor porta
+EXPOSE 8080
+
+# Comando padrão
+CMD ["bash", "/app/backend/start.sh"]
+

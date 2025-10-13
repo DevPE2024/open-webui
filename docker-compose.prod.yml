@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  openui-prod:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: openui-prod
+    ports:
+      - "3003:8080"
+    volumes:
+      - openui-prod-data:/app/backend/data
+      - ./custom-branding:/app/backend/static/custom
+      - ./static:/app/static
+    environment:
+      # Configurações PROD
+      - ENV=production
+      - WEBUI_NAME=OpenUIX
+      - WEBUI_URL=http://localhost:3003
+      
+      # LiteLLM API
+      - ENABLE_OPENAI_API=true
+      - OPENAI_API_KEY=sk-BKoQlwwMC5KkIu3Lr3S5BA
+      - OPENAI_API_BASE_URL=http://host.docker.internal:4000/v1
+      
+      # Segurança
+      - WEBUI_SECRET_KEY=openui-secret-2025
+      - ENABLE_SIGNUP=true
+      - DEFAULT_USER_ROLE=user
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+volumes:
+  openui-prod-data:
+    driver: local

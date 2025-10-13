@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  openui-dev:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: openui-dev
+    ports:
+      - "5050:8080"
+    volumes:
+      - openui-dev-data:/app/backend/data
+      - ./custom-branding:/app/backend/static/custom
+    environment:
+      # Configurações DEV
+      - ENV=development
+      - WEBUI_NAME=OpenUIX Enterprise - Powered by Open WebUI
+      - WEBUI_URL=http://localhost:5050
+      
+      # Idioma - FORÇADO para Inglês
+      - DEFAULT_LOCALE=en-US
+      - FORCE_LOCALE=en-US
+      
+      # Configurações de Usuário
+      - DEFAULT_USER_ROLE=user
+      - ENABLE_SIGNUP=true
+      
+      # 🔗 INTEGRAÇÃO PRODIFY - SSO
+      - PRODIFY_AUTH_ENABLED=true
+      - PRODIFY_DB_HOST=host.docker.internal
+      - PRODIFY_DB_PORT=8010
+      - PRODIFY_DB_NAME=super_productive
+      - PRODIFY_DB_USER=postgres
+      - PRODIFY_DB_PASSWORD=password
+      
+      # LiteLLM API
+      - ENABLE_OPENAI_API=true
+      - OPENAI_API_KEY=sk-BKoQlwwMC5KkIu3Lr3S5BA
+      - OPENAI_API_BASE_URL=http://host.docker.internal:4000/v1
+      
+      # Debug
+      - LOG_LEVEL=debug
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+volumes:
+  openui-dev-data:
+    driver: local
