@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Custom Branding</title>
+    <link rel="stylesheet" href="custom.css">
+</head>
+<body>
+    <script src="hide-internal-info.js"></script>
+    <script src="credits-display.js"></script>
+</body>
+</html>

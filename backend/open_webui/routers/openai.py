@@ -740,6 +740,32 @@ async def generate_chat_completion(
     user=Depends(get_verified_user),
     bypass_filter: Optional[bool] = False,
 ):
+    # Verificar e consumir créditos antes de processar
+    from open_webui.utils.credits import check_user_credits, consume_user_credits
+    
+    credits_check = check_user_credits(user.email)
+    if not credits_check.get('hasCredits', False):
+        raise HTTPException(
+            status_code=402,
+            detail={
+                'error': 'Insufficient credits',
+                'message': 'You have run out of AI credits. Please upgrade your plan or purchase additional credits.',
+                'credits': credits_check.get('credits', 0)
+            }
+        )
+    
+    # Consumir 1 crédito para esta mensagem
+    consume_result = consume_user_credits(user.email, credits=1)
+    if not consume_result.get('success', False):
+        raise HTTPException(
+            status_code=402,
+            detail={
+                'error': 'Failed to consume credits',
+                'message': consume_result.get('error', 'Error consuming credits'),
+                'credits': consume_result.get('credits', 0)
+            }
+        )
+
     if BYPASS_MODEL_ACCESS_CONTROL:
         bypass_filter = True
 

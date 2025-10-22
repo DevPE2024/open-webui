@@ -167,3 +167,5 @@ docker restart openui-dev
 
 **A aplicação está PRONTA para comercialização dentro dos limites da licença!**
 
+
+

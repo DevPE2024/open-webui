@@ -36,6 +36,7 @@
 
 	import EllipsisHorizontal from '../icons/EllipsisHorizontal.svelte';
 	import ChatPlus from '../icons/ChatPlus.svelte';
+	import CreditsDisplay from '../common/CreditsDisplay.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -218,6 +219,11 @@
 					{/if}
 
 					{#if $user !== undefined && $user !== null}
+						<!-- Exibição de créditos -->
+						<div class="mr-2">
+							<CreditsDisplay />
+						</div>
+
 						<UserMenu
 							className="max-w-[240px]"
 							role={$user?.role}

@@ -32,3 +32,248 @@ button[title*="password"] svg,
 .eye-icon svg {
   display: none !important;
 }
+
+/* ===========================================
+   OCULTAR INFORMAÇÕES INTERNAS DO SISTEMA
+   =========================================== */
+
+/* Esconder painel de administração para usuários normais */
+[href*="/admin"],
+[href*="admin"],
+button[aria-label*="Admin"],
+button[title*="Admin"],
+.admin-panel,
+.admin-menu {
+  display: none !important;
+}
+
+/* Esconder configurações de conexão */
+[href*="/admin/settings/connections"],
+[href*="connections"],
+.connections-settings,
+.connection-details {
+  display: none !important;
+}
+
+/* Esconder URLs internas e chaves mestras - Força máxima */
+input[value*="litellm"],
+input[value*="ollama"],
+input[value*="sk-1234"],
+input[value*="sk-BKoQlwwMC5KkIu3Lr3S5BA"],
+input[placeholder*="API Base URL"],
+input[placeholder*="Enter URL"],
+input[placeholder*="API Key"],
+textarea[placeholder*="models"],
+[title*="litellm"],
+[title*="ollama"],
+[aria-label*="litellm"],
+[aria-label*="ollama"],
+[class*="connection"],
+[class*="api-settings"],
+[class*="openai-api"],
+[class*="ollama-api"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Esconder botões de editar conexões */
+button[aria-label*="edit"],
+button[title*="edit"],
+button[aria-label*="Edit"],
+button[title*="Edit"],
+button[aria-label*="connection"],
+button[title*="connection"] {
+  display: none !important;
+}
+
+/* Esconder seções específicas de configuração */
+div:has(input[value*="litellm"]),
+div:has(input[value*="ollama"]),
+div:has(input[placeholder*="API Base URL"]),
+div:has(input[placeholder*="Enter URL"]),
+div:has(input[placeholder*="API Key"]) {
+  display: none !important;
+}
+
+/* Esconder labels e textos relacionados */
+label:has(+ input[value*="litellm"]),
+label:has(+ input[value*="ollama"]),
+span:has(+ input[value*="litellm"]),
+span:has(+ input[value*="ollama"]) {
+  display: none !important;
+}
+
+/* Script JavaScript será incluído via HTML */
+
+/* Esconder URLs internas do sistema */
+input[value*="litellm:4000"],
+input[value*="openuix-ollama-dev"],
+input[placeholder*="API Base URL"],
+input[placeholder*="Enter URL"],
+.connection-url,
+.api-base-url {
+  display: none !important;
+}
+
+/* Esconder campos de chave de API */
+input[type="password"][value*="sk-"],
+input[placeholder*="API Key"],
+.api-key-field,
+.connection-key {
+  display: none !important;
+}
+
+/* Esconder botões de gerenciamento de conexão */
+button[aria-label*="Manage"],
+button[title*="Manage"],
+.manage-connections,
+.connection-manage {
+  display: none !important;
+}
+
+/* Esconder informações de debug */
+.debug-info,
+.connection-debug,
+.api-debug {
+  display: none !important;
+}
+
+/* Esconder seções de configuração avançada */
+.advanced-settings,
+.connection-advanced,
+.api-advanced {
+  display: none !important;
+}
+
+/* Esconder tooltips que mostram URLs internas */
+[title*="litellm"],
+[title*="ollama"],
+[aria-label*="litellm"],
+[aria-label*="ollama"] {
+  display: none !important;
+}
+
+/* Esconder elementos que mostram endpoints internos */
+.endpoint-info,
+.internal-endpoint,
+.system-endpoint {
+  display: none !important;
+}
+
+/* Garantir que usuários normais não vejam configurações técnicas */
+.user-role-user .admin-only,
+.user-role-user .technical-settings,
+.user-role-user .system-config {
+  display: none !important;
+}
+
+/* Esconder botões de edição de conexão */
+button[aria-label*="Edit Connection"],
+button[title*="Edit Connection"],
+.edit-connection,
+.connection-edit {
+  display: none !important;
+}
+
+/* Esconder modal de edição de conexão */
+.modal[aria-labelledby*="Edit Connection"],
+.dialog[aria-labelledby*="Edit Connection"] {
+  display: none !important;
+}
+
+/* Esconder informações de sistema na interface */
+.system-info,
+.internal-info,
+.debug-panel {
+  display: none !important;
+}
+
+/* ===========================================
+   SISTEMA DE CRÉDITOS OPENUIX
+   =========================================== */
+
+/* Estilos para o componente de créditos */
+#credits-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: 0.5rem;
+}
+
+#credits-display .credits-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#credits-display .credits-container:hover {
+  border-color: rgba(75, 85, 99, 0.5);
+}
+
+#credits-display .credits-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+#credits-display .credits-count {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+#credits-display .credits-plan {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  background-color: rgba(55, 65, 81, 0.5);
+  color: #d1d5db;
+  border: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+#credits-display .credits-warning {
+  font-size: 0.75rem;
+  color: #fbbf24;
+  background-color: rgba(251, 191, 36, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  animation: pulse 2s infinite;
+}
+
+#credits-display .credits-error {
+  font-size: 0.75rem;
+  color: #f87171;
+  background-color: rgba(248, 113, 113, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+/* Cores baseadas na quantidade de créditos */
+#credits-display .credits-green {
+  color: #4ade80;
+  background-color: rgba(74, 222, 128, 0.1);
+}
+
+#credits-display .credits-yellow {
+  color: #facc15;
+  background-color: rgba(250, 204, 21, 0.1);
+}
+
+#credits-display .credits-red {
+  color: #f87171;
+  background-color: rgba(248, 113, 113, 0.1);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
